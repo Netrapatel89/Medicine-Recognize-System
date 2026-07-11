@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AuraMed — Advanced AI Medical Recognition System</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Main Style Sheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Marked.js for rendering markdown output -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <!-- Background glows for premium look -->
+    <div class="glow-sphere glow-sphere-1"></div>
+    <div class="glow-sphere glow-sphere-2"></div>
+
+    <div class="app-container">
+        <!-- Sidebar / Navigation -->
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-notes-medical"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">AURA<span>MED</span></span>
+                    <span class="logo-subtitle">AI Recognition System</span>
+                </div>
+            </div>
+            <div class="header-status">
+                {% if api_key_configured %}
+                    <span class="status-badge status-online">
+                        <span class="status-dot"></span>
+                        Gemini-1.5 Connected
+                    </span>
+                {% elif demo_mode %}
+                    <span class="status-badge status-warning" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.3);">
+                        <span class="status-dot" style="background-color: var(--warning); box-shadow: 0 0 8px var(--warning);"></span>
+                        Demo Mode Active
+                    </span>
+                {% else %}
+                    <span class="status-badge status-offline">
+                        <span class="status-dot"></span>
+                        Key Missing
+                    </span>
+                {% endif %}
+            </div>
+        </header>
+
+        {% if not api_key_configured %}
+        <div class="alert-banner" {% if demo_mode %}style="background: rgba(245, 158, 11, 0.05); border-color: rgba(245, 158, 11, 0.25);"{% endif %}>
+            <div class="alert-icon" {% if demo_mode %}style="color: var(--warning);"{% endif %}>
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div class="alert-content">
+                {% if demo_mode %}
+                    <h3>Running in Demo Mode (Mock AI)</h3>
+                    <p>A valid Google Gemini API Key was not set in your environment. You can upload any image to test the full dashboard interface immediately. To use live AI recognition, add your key to <code>.env</code>.</p>
+                {% else %}
+                    <h3>Google Gemini API Key is Missing</h3>
+                    <p>To use this recognition engine, please create a <code>.env</code> file in the project root directory and add <code>GOOGLE_API_KEY=your_key_here</code>.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <main class="dashboard-grid">
+            <!-- Left Panel: Upload Area & Settings -->
+            <section class="panel-card upload-panel">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-file-medical"></i> Clinical Data Ingestion</h2>
+                    <p>Provide a clear image of pills, packaging, prescription labels, or medical scans for structured analysis.</p>
+                </div>
+                
+                <form id="upload-form" class="upload-form">
+                    <div id="drop-zone" class="drop-zone">
+                        <input type="file" id="file-input" name="file" accept="image/*" class="file-input" required>
+                        <div class="drop-zone-content">
+                            <div class="upload-icon">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                            </div>
+                            <h3>Drag & Drop Image</h3>
+                            <p>or <span class="browse-link">browse local files</span></p>
+                            <span class="file-spec">Supports JPEG, JPG, PNG (Max 10MB)</span>
+                        </div>
+                        
+                        <!-- Image Preview Overlay -->
+                        <div id="preview-overlay" class="preview-overlay hidden">
+                            <img id="image-preview" src="#" alt="Uploaded Medicine">
+                            <button type="button" id="remove-btn" class="remove-btn" title="Remove image">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="submit-btn" class="btn btn-primary" disabled>
+                        <span>Analyze Ingested Data</span>
+                        <i class="fa-solid fa-microscope"></i>
+                    </button>
+                </form>
+            </section>
+
+            <!-- Right Panel: Recognition Report -->
+            <section class="panel-card report-panel">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-square-poll-horizontal"></i> Diagnostic Report</h2>
+                    <div class="report-controls">
+                        <button type="button" id="copy-btn" class="control-btn hidden" title="Copy Report to Clipboard">
+                            <i class="fa-regular fa-copy"></i>
+                        </button>
+                        <button type="button" id="print-btn" class="control-btn hidden" title="Print Report">
+                            <i class="fa-solid fa-print"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Initial Idle State -->
+                <div id="report-idle" class="report-state report-idle">
+                    <div class="idle-illustration">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <h3>Waiting for Analysis</h3>
+                    <p>Upload and submit an image in the left panel to trigger the AI-driven diagnostics report.</p>
+                </div>
+
+                <!-- Loading State -->
+                <div id="report-loading" class="report-state report-loading hidden">
+                    <div class="loader-container">
+                        <div class="loader-circle"></div>
+                        <i class="fa-solid fa-dna loading-icon-center"></i>
+                    </div>
+                    <h3 id="loader-status">Uploading image...</h3>
+                    <p>Verifying molecular metadata and structures using LLM Vision layers.</p>
+                    
+                    <div class="shimmer-container">
+                        <div class="shimmer-line line-1"></div>
+                        <div class="shimmer-line line-2"></div>
+                        <div class="shimmer-line line-3"></div>
+                    </div>
+                </div>
+
+                <!-- Error State -->
+                <div id="report-error" class="report-state report-error hidden">
+                    <div class="error-illustration">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                    </div>
+                    <h3 id="error-title">Validation Error</h3>
+                    <p id="error-message">The uploaded file could not be parsed.</p>
+                    <button type="button" id="retry-btn" class="btn btn-secondary">Try Again</button>
+                </div>
+
+                <!-- Result Report State -->
+                <div id="report-result" class="report-state report-result hidden">
+                    <div class="validation-success-badge">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        Validated Medical Context
+                    </div>
+                    
+                    <div id="markdown-output" class="markdown-body">
+                        <!-- Markdown text will be rendered dynamically here -->
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <footer class="app-footer">
+            <p>&copy; 2026 AuraMed Diagnostics. Powered by Google Gemini-1.5 AI. All rights reserved.</p>
+        </footer>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
