@@ -120,14 +120,6 @@ This project is licensed under the MIT License - see the `LICENSE` file for deta
 
 ---
 
-## ✉️ Contact Details
-
-**Hema Kalyan Murapaka** - [kalyanmurapaka274@gmail.com](mailto:kalyanmurapaka274@gmail.com)
-
-Project Link: [https://github.com/KalyanMurapaka45/Medicine-Recognition-System](https://github.com/KalyanMurapaka45/Medicine-Recognition-System)
-
----
-
 ## ⚠️ Disclaimer
 
 This tool is powered by Generative AI and is intended **solely for informational, educational, and testing purposes**. It does not constitute medical advice, diagnosis, or prescription support. Always consult a licensed healthcare professional or physician before taking, modifying, or terminating any medication course.
